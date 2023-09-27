@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="utf-8">
+  <title>Display navigation directions</title>
+  <meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no">
+  <link href="https://api.mapbox.com/mapbox-gl-js/v2.14.1/mapbox-gl.css" rel="stylesheet">
+  <script src="https://api.mapbox.com/mapbox-gl-js/v2.14.1/mapbox-gl.js"></script>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+    }
+
+    #map {
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      width: 100%;
+    }
+
+  </style>
+</head>
+
+<body>
+  <script
+    src="https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-directions/v4.1.1/mapbox-gl-directions.js"></script>
+  <link rel="stylesheet"
+    href="https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-directions/v4.1.1/mapbox-gl-directions.css"
+    type="text/css">
+  <div id="map"></div>
+
+  <script>
+    mapboxgl.accessToken = 'pk.eyJ1IjoieXVqaW5nZ3UiLCJhIjoiY2tucG45emtzMDJvMjJwbW1iZjB6bnhleSJ9.S4mxBxrZL0KFEiitoBUp0Q';
+    const map = new mapboxgl.Map({
+      container: 'map',
+      style: 'mapbox://styles/mapbox/streets-v12',
+      center: [11.255, 43.77],
+      zoom: 13
+    });
+
+    // 导航方向
+    // map.addControl(
+    //   new MapboxDirections({
+    //     accessToken: mapboxgl.accessToken
+    //   }),
+    //   'top-left'
+    // );
+
+
+    // 全屏
+    map.addControl(
+      new mapboxgl.FullscreenControl());
+
+
+    // 定位
+    map.addControl(
+      new mapboxgl.GeolocateControl({
+        positionOptions: {
+          enableHighAccuracy: true
+        },
+        //当激活时，地图将接收设备位置，随它的变化而更新。
+        trackUserLocation: false,
+        // 在位置点旁边画一个箭头来指示设备前进的方向。
+        showUserHeading: true,
+        showAccuracyCircle: false,
+        showUserLocation: false,
+      })
+    );
+  </script>
+
+</body>
+
+</html>

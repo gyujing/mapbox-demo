@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="utf-8">
+  <title>Add a 3D model</title>
+  <meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no">
+  <link href="https://api.mapbox.com/mapbox-gl-js/v2.14.1/mapbox-gl.css" rel="stylesheet">
+  <script src="https://api.mapbox.com/mapbox-gl-js/v2.14.1/mapbox-gl.js"></script>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+    }
+
+    #map {
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      width: 100%;
+    }
+
+  </style>
+</head>
+
+<body>
+  <script src="https://unpkg.com/three@0.126.0/build/three.min.js"></script>
+  <script src="https://unpkg.com/three@0.126.0/examples/js/loaders/GLTFLoader.js"></script>
+  <div id="map"></div>
+  <script>
+    mapboxgl.accessToken = 'pk.eyJ1IjoieXVqaW5nZ3UiLCJhIjoiY2tucG45emtzMDJvMjJwbW1iZjB6bnhleSJ9.S4mxBxrZL0KFEiitoBUp0Q';
+    const map = new mapboxgl.Map({
+      container: 'map',
+      style: 'mapbox://styles/mapbox/light-v11',
+      zoom: 18,
+      center: [148.9819, -35.3981],
+      pitch: 60,
+      antialias: true
+    });
+
+    // 参数，以确保模型在地图上被正确地引用
+    const modelOrigin = [148.9819, -35.39847];
+    const modelAltitude = 0;
+    const modelRotate = [Math.PI / 2, 0, 0];
+
+    const modelAsMercatorCoordinate = mapboxgl.MercatorCoordinate.fromLngLat(
+      modelOrigin,
+      modelAltitude
+    );
+
+    // 转换参数来定位、旋转和缩放3D模型到地图上
+    const modelTransform = {
+      translateX: modelAsMercatorCoordinate.x,
+      translateY: modelAsMercatorCoordinate.y,
+      translateZ: modelAsMercatorCoordinate.z,
+      rotateX: modelRotate[0],
+      rotateY: modelRotate[1],
+      rotateZ: modelRotate[2],
+      /* 由于3D模型是在现实世界的米，一个比例转换需要应用
+       * CustomLayerInterface需要MercatorCoordinates中的单位
+       */
+      scale: modelAsMercatorCoordinate.meterInMercatorCoordinateUnits()
+    };
+
+    const THREE = window.THREE;
+
+    // configuration of the custom layer for a 3D model per the CustomLayerInterface
+    const customLayer = {
+      id: '3d-model',
+      type: 'custom',
+      renderingMode: '3d',
+      onAdd: function (map, gl) {
+        // 照相机 
+        this.camera = new THREE.Camera();
+        // 场景
+        this.scene = new THREE.Scene();
+        // 坐标轴
+        const axesHelper = new THREE.AxesHelper(50); // 参数表示坐标系坐标轴线段尺寸大小
+        this.scene.add(axesHelper);
+
+        // 光源
+        const directionalLight = new THREE.DirectionalLight(0xffffff);//定向光源直射
+        directionalLight.position.set(0, -70, 100).normalize();
+        this.scene.add(directionalLight);
+
+        const directionalLight2 = new THREE.DirectionalLight(0xffffff);
+        directionalLight2.position.set(0, 70, 100).normalize();
+        this.scene.add(directionalLight2);
+
+        // 光源辅助器
+        const dirLightHelper = new THREE.DirectionalLightHelper(directionalLight, 50,0xff0000);
+        const dirLightHelper2 = new THREE.DirectionalLightHelper(directionalLight2, 50,0x4169E1);
+        this.scene.add(dirLightHelper);
+        this.scene.add(dirLightHelper2);
+
+        // three.js GLTF加载器
+        // 将3D模型添加到three.js场景中
+        const loader = new THREE.GLTFLoader();
+        loader.load(
+          'https://docs.mapbox.com/mapbox-gl-js/assets/34M_17/34M_17.gltf',
+          (gltf) => {
+            this.scene.add(gltf.scene);
+          }
+        );
+        this.map = map;
+
+        // 将Mapbox地图的canvas和WebGL渲染器绑定
+        this.renderer = new THREE.WebGLRenderer({
+          canvas: map.getCanvas(),
+          context: gl,
+          antialias: true
+        });
+        // 不清除画布上的内容
+        this.renderer.autoClear = false;
+
+      },
+      render: function (gl, matrix) {
+        // Matrix4 四维矩阵
+        // 设置当前矩阵为围绕轴 axis 旋转量为 theta弧度
+        const rotationX = new THREE.Matrix4().makeRotationAxis(
+          new THREE.Vector3(1, 0, 0), //旋转轴x
+          modelTransform.rotateX  //旋转量
+        );
+        const rotationY = new THREE.Matrix4().makeRotationAxis(
+          new THREE.Vector3(0, 1, 0), //旋转轴y
+          modelTransform.rotateY
+        );
+        const rotationZ = new THREE.Matrix4().makeRotationAxis(
+          new THREE.Vector3(0, 0, 1), //旋转轴z
+          modelTransform.rotateZ
+        );
+
+        // 通过fromArray方法将传入的矩阵参数转换为THREE.Matrix4对象
+        const m = new THREE.Matrix4().fromArray(matrix);
+        // 创建一个包含平移、缩放和旋转变换的矩阵
+        const l = new THREE.Matrix4()
+          .makeTranslation(   //平移
+            modelTransform.translateX,
+            modelTransform.translateY,
+            modelTransform.translateZ
+          )
+          .scale(  //缩放
+            new THREE.Vector3(
+              modelTransform.scale,
+              -modelTransform.scale,
+              modelTransform.scale
+            )
+          )
+          .multiply(rotationX) //旋转
+          .multiply(rotationY)
+          .multiply(rotationZ);
+
+        // 将相机的投影矩阵设置为传入的矩阵与变换矩阵相乘的结果
+        this.camera.projectionMatrix = m.multiply(l);
+        this.renderer.resetState();
+        // 将场景和相机渲染到画布
+        this.renderer.render(this.scene, this.camera);
+        // 通知Mapbox地图重新绘制，以更新渲染结果
+        this.map.triggerRepaint();
+      }
+    };
+
+    map.on('style.load', () => {
+      map.addLayer(customLayer, 'waterway-label');
+    });
+  </script>
+
+</body>
+
+</html>

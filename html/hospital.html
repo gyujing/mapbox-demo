@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>计算每个图书馆离哪个医院最近</title>
+  <link href='https://api.mapbox.com/mapbox-gl-js/v2.14.1/mapbox-gl.css' rel='stylesheet' />
+  <script src='https://api.mapbox.com/mapbox-gl-js/v2.14.1/mapbox-gl.js'></script>
+  <script src='https://api.mapbox.com/mapbox.js/plugins/turf/v3.0.11/turf.min.js'></script>
+</head>
+<style>
+  body {
+    margin: 0;
+    padding: 0;
+  }
+
+  #map {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 100%;
+  }
+
+</style>
+
+<body>
+  <div id='map'></div>
+
+  <script>
+    mapboxgl.accessToken = 'pk.eyJ1IjoieXVqaW5nZ3UiLCJhIjoiY2tucG45emtzMDJvMjJwbW1iZjB6bnhleSJ9.S4mxBxrZL0KFEiitoBUp0Q';
+    const map = new mapboxgl.Map({
+      container: 'map', // container id
+      style: 'mapbox://styles/mapbox/light-v11', // stylesheet location
+      center: [-84.5, 38.05], // starting position
+      zoom: 12 // starting zoom
+    });
+
+    // 医院
+    const hospitals = {
+      "type": "FeatureCollection",
+      "features": [
+        { "type": "Feature", "properties": { "Name": "医院一", "Address": "2250 Leestown Rd" }, "geometry": { "type": "Point", "coordinates": [-84.539487, 38.072916] } },
+        { "type": "Feature", "properties": { "Name": "医院二", "Address": "150 N Eagle Creek Dr" }, "geometry": { "type": "Point", "coordinates": [-84.440434, 37.998757] } },
+        { "type": "Feature", "properties": { "Name": "医院三", "Address": "1740 Nicholasville Rd" }, "geometry": { "type": "Point", "coordinates": [-84.512283, 38.018918] } },
+        { "type": "Feature", "properties": { "Name": "医院四", "Address": "1101 Veterans Dr" }, "geometry": { "type": "Point", "coordinates": [-84.506483, 38.02972] } },
+        { "type": "Feature", "properties": { "Name": "医院五", "Address": "1900 Richmond Rd" }, "geometry": { "type": "Point", "coordinates": [-84.472941, 38.022564] } },
+        { "type": "Feature", "properties": { "Name": "医院六", "Address": "627 W Fourth St" }, "geometry": { "type": "Point", "coordinates": [-84.498816, 38.060791] } },
+        { "type": "Feature", "properties": { "Name": "医院七", "Address": "2050 Versailles Rd" }, "geometry": { "type": "Point", "coordinates": [-84.54212, 38.046568] } },
+        { "type": "Feature", "properties": { "Name": "医院八", "ADDRESS": "1 St Joseph Dr" }, "geometry": { "type": "Point", "coordinates": [-84.523636, 38.032475] } },
+        { "type": "Feature", "properties": { "Name": "医院九", "Address": "310 S Limestone" }, "geometry": { "type": "Point", "coordinates": [-84.501222, 38.042123] } },
+        {
+          "type": "Feature", "properties": { "Name": "医院十", "Address": "800 Rose St" }, "geometry": { "type": "Point", "coordinates": [-84.508205, 38.031254] }
+        }
+      ]
+    };
+
+    // 图书馆
+    const libraries = {
+      "type": "FeatureCollection",
+      "features": [
+        { "type": "Feature", "properties": { "Name": "第一图书馆", "Address": "2185 Versailles Rd" }, "geometry": { "type": "Point", "coordinates": [-84.548369, 38.047876] } },
+        { "type": "Feature", "properties": { "Name": "第二图书馆", "ADDRESS": "1733 Russell Cave Rd" }, "geometry": { "type": "Point", "coordinates": [-84.47135, 38.079734] } },
+        { "type": "Feature", "properties": { "Name": "第三图书馆", "ADDRESS": "140 E Main St" }, "geometry": { "type": "Point", "coordinates": [-84.496894, 38.045459] } },
+        { "type": "Feature", "properties": { "Name": "第四图书馆", "Address": "3080 Fieldstone Way" }, "geometry": { "type": "Point", "coordinates": [-84.557948, 38.012502] } },
+        { "type": "Feature", "properties": { "Name": "第五图书馆", "Address": "3628 Walden Dr" }, "geometry": { "type": "Point", "coordinates": [-84.498679, 37.979598] } },
+        { "type": "Feature", "properties": { "Name": "第六图书馆", "Address": "101 N Eagle Creek Dr" }, "geometry": { "type": "Point", "coordinates": [-84.442219, 37.999437] } }
+      ]
+    };
+
+
+    map.on('load', () => {
+      // 添加一个空的数据源
+      map.addSource('nearest-hospital', {
+        type: 'geojson',
+        data: {
+          type: 'FeatureCollection',
+          features: []
+        }
+      });
+
+      map.addLayer({
+        id: 'hospitals',
+        type: 'symbol',
+        source: {
+          type: 'geojson',
+          data: hospitals
+        },
+        layout: {
+          'icon-image': 'hospital',
+          "icon-size": 2,
+          'icon-allow-overlap': true //允许图标之间发生重叠，互相覆盖
+        },
+        paint: {}
+      });
+      map.addLayer({
+        id: 'libraries',
+        type: 'symbol',
+        source: {
+          type: 'geojson',
+          data: libraries
+        },
+        layout: {
+          'icon-image': 'library',
+          "icon-size": 2,
+        },
+        paint: {}
+      });
+    });
+
+
+    // 添加弹框，鼠标经过显示弹框
+    const popup = new mapboxgl.Popup();
+
+    map.on('mousemove', (event) => {
+      // 通过经纬度，获取所在图层
+      const features = map.queryRenderedFeatures(event.point, {
+        layers: ['hospitals', 'libraries']
+      });
+      if (!features.length) {
+        popup.remove();
+        return;
+      }
+      const feature = features[0];
+
+      popup
+        .setLngLat(feature.geometry.coordinates)
+        .setHTML(feature.properties.Name)
+        .addTo(map);
+
+      map.getCanvas().style.cursor = features.length ? 'pointer' : '';
+    });
+
+
+
+    // 点击图书馆，获取最近医院
+    map.on('click', (event) => {
+      // 图书馆图层被点击
+      const libraryFeatures = map.queryRenderedFeatures(event.point, {
+        layers: ['libraries']
+      });
+      if (!libraryFeatures.length) {
+        return;
+      }
+      const libraryFeature = libraryFeatures[0];
+
+      // 计算出点击的图书馆最近的医院
+      const nearestHospital = turf.nearest(libraryFeature, hospitals);
+
+      if (nearestHospital === null) return;
+
+      // 更新数据源 'nearest-library'，将最近的医院数据信息添加到数据源
+      map.getSource('nearest-hospital').setData({
+        type: 'FeatureCollection',
+        features: [nearestHospital]
+      });
+
+      // 添加新图层。最近医院，用圆圈显示出来
+      if (map.getLayer('nearest-hospital')) {
+        map.removeLayer('nearest-hospital');
+      }
+      map.addLayer(
+        {
+          id: 'nearest-hospital',
+          type: 'circle',
+          source: 'nearest-hospital',
+          paint: {
+            'circle-radius': 12,
+            'circle-color': '#486DE0'
+          }
+        },
+        'hospitals'
+      );
+    });
+  </script>
+</body>
+
+</html>

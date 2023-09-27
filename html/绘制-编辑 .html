@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <title>Draw a polygon and calculate its area</title>
+    <meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no">
+    <link href="https://api.mapbox.com/mapbox-gl-js/v2.14.1/mapbox-gl.css" rel="stylesheet">
+    <script src="https://api.mapbox.com/mapbox-gl-js/v2.14.1/mapbox-gl.js"></script>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+        }
+
+        #map {
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            width: 100%;
+        }
+
+    </style>
+</head>
+
+<body>
+    <style>
+        .calculation-box {
+            height: 75px;
+            width: 150px;
+            position: absolute;
+            bottom: 40px;
+            left: 10px;
+            background-color: rgba(255, 255, 255, 0.9);
+            padding: 15px;
+            text-align: center;
+        }
+
+        p {
+            font-family: 'Open Sans';
+            margin: 0;
+            font-size: 13px;
+        }
+
+    </style>
+
+    <script src="https://unpkg.com/@turf/turf@6/turf.min.js"></script>
+    <script src="https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-draw/v1.4.0/mapbox-gl-draw.js"></script>
+    <link rel="stylesheet" href="https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-draw/v1.4.0/mapbox-gl-draw.css"
+        type="text/css">
+    <div id="map"></div>
+    <div class="calculation-box">
+        <button onclick="edit()">编辑</button>
+    </div>
+
+    <script>
+        let circle = false;
+        mapboxgl.accessToken = 'pk.eyJ1IjoieXVqaW5nZ3UiLCJhIjoiY2tucG45emtzMDJvMjJwbW1iZjB6bnhleSJ9.S4mxBxrZL0KFEiitoBUp0Q';
+        const map = new mapboxgl.Map({
+            container: 'map',
+            style: 'mapbox://styles/mapbox/streets-v12', // style URL
+            center: [116.38752937316895, 39.907859855577165],
+            zoom: 16
+        });
+
+        const polygonData = {
+            type: "FeatureCollection",
+            features: [
+                {
+                    type: "Feature",
+                    properties: {},
+                    geometry: {
+                        type: "Polygon",
+                        coordinates: [
+                            [
+                                [116.38752937316895, 39.907859855577165],
+                                [116.39570474624634, 39.907859855577165],
+                                [116.39570474624634, 39.91083076519556],
+                                [116.38752937316895, 39.91083076519556],
+                                [116.38752937316895, 39.907859855577165]
+                            ]
+                        ]
+                    }
+                }
+            ]
+        };
+
+
+        const draw = new MapboxDraw({
+            displayControlsDefault: false,
+        });
+
+        map.addControl(draw, "top-right");
+
+        map.on('draw.create', updateArea);
+        map.on('draw.delete', updateArea);
+        map.on('draw.update', updateArea);
+
+        map.on('load', function () {
+            addPolygon(map);
+        });
+
+        function updateArea(e) {
+            const data = draw.getAll();
+
+            if (data.features.length > 0) {
+                console.log("绘制",data)
+               
+            } else {
+                if (e.type !== 'draw.delete')
+                    alert('Click the map to draw a polygon.');
+            }
+        }
+
+        function addPolygon(map) {
+            // 面
+
+            map.addSource("polygon", {
+                type: "geojson",
+                data: polygonData
+            });
+
+            // 添加图层 - 多边形
+            map.addLayer({
+                id: "polygon",
+                type: "fill",
+                source: "polygon", //上面添加的source
+                layout: {},
+                paint: {
+                    "fill-color": "#DC143C", //面颜色
+                    "fill-opacity": 0.5 // 面透明度
+                }
+            });
+        }
+
+
+        function edit() {
+            // draw.changeMode('draw_polygon');
+            draw.add(polygonData)
+        }
+
+
+    </script>
+
+</body>
+
+</html>

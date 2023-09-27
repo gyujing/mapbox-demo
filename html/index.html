@@ -1,0 +1,1031 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MapBox</title>
+  <link href="./mapbox-gl.css" rel="stylesheet">
+  <script src="./mapbox-gl.js"></script>
+</head>
+
+<style>
+  body {
+    margin: 0;
+    padding: 0;
+  }
+
+  #map {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 100%;
+  }
+
+</style>
+
+<body>
+  <div id="map"></div>
+  <script>
+    mapboxgl.accessToken = 'pk.eyJ1IjoieXVqaW5nZ3UiLCJhIjoiY2tucG45emtzMDJvMjJwbW1iZjB6bnhleSJ9.S4mxBxrZL0KFEiitoBUp0Q';
+    var map = new mapboxgl.Map({
+      container: "map", // 对应上一步创建的id名称
+      style: "mapbox://styles/mapbox/streets-v11", // 地图样式，也可以写自己的地图样式
+      // style: 'mapbox://styles/mapbox/streets-v12', // style URL
+      center: [116.39104843139647, 39.912287369097186], //地图初始化时，定位的位置
+      zoom: 15, // 缩放级别
+      // pitch: 64.9,
+      // bearing: 172.5,
+      // antialias: true
+    });
+
+    // map.addControl(new mapboxgl.NavigationControl());
+
+    const navigation = new mapboxgl.NavigationControl({
+      visualizePitch: true,
+      showCompass: true,
+      showZoom: true,
+    });
+    map.addControl(navigation, 'top-left');
+
+    map.addControl(new mapboxgl.FullscreenControl({ container: document.querySelector('body') }));
+
+    const scale = new mapboxgl.ScaleControl({
+      maxWidth: 80,
+      unit: 'imperial'
+    });
+    map.addControl(scale);
+
+    map.addControl(new mapboxgl.GeolocateControl({
+      positionOptions: {
+        enableHighAccuracy: true
+      },
+      trackUserLocation: true,
+      showUserHeading: true
+    }));
+    // map.removeControl(navigation);
+
+    function addBase(map) {
+      // geojson格式数据
+      // 点
+      const pointData = {
+        type: "FeatureCollection",
+        features: [
+          {
+            type: "Feature",
+            properties: {},
+            geometry: {
+              type: "Point",
+              coordinates: [116.39104843139647, 39.912287369097186]
+              // coordinates: [116.38540506362915, 39.91115171447854],
+            }
+          }
+        ]
+      };
+      // 线
+      const lineData = {
+        type: "FeatureCollection",
+        features: [
+          {
+            type: "Feature",
+            properties: {},
+            geometry: {
+              type: "LineString",
+              coordinates: [
+                [116.38540506362915, 39.91115171447854],
+                [116.3856840133667, 39.90613156632883],
+                [116.3971424102783, 39.906510147702974],
+                [116.39682054519652, 39.9116290208874]
+              ]
+            }
+          }
+        ]
+      };
+      // 面
+      const polygonData = {
+        type: "FeatureCollection",
+        features: [
+          {
+            type: "Feature",
+            properties: {},
+            geometry: {
+              type: "Polygon",
+              coordinates: [
+                [
+                  [116.38752937316895, 39.907859855577165],
+                  [116.39570474624634, 39.907859855577165],
+                  [116.39570474624634, 39.91083076519556],
+                  [116.38752937316895, 39.91083076519556],
+                  [116.38752937316895, 39.907859855577165]
+                ]
+              ]
+            }
+          }
+        ]
+      };
+      // 添加数据源
+      map.addSource("point", {
+        type: "geojson",
+        data: pointData
+      });
+      map.addSource("line", {
+        type: "geojson",
+        data: lineData
+      });
+      map.addSource("polygon", {
+        type: "geojson",
+        data: polygonData
+      });
+      // 添加图层 - 点
+      map.addLayer({
+        id: "point",
+        type: "symbol",
+        source: "point",
+        layout: {
+          "icon-size": 3, //图标大小
+          "icon-image": "museum-15" //图片名称
+        },
+        paint: {}
+      });
+      // 添加图层 - 线
+      map.addLayer({
+        id: "line",
+        type: "line",
+        source: "line",
+        layout: {},
+        paint: {
+          "line-color": "#fbb03b", //线颜色
+          "line-width": 10 // 线宽
+        }
+      });
+      // 添加图层 - 多边形
+      map.addLayer({
+        id: "polygon",
+        type: "fill",
+        source: "polygon", //上面添加的source
+        layout: {},
+        paint: {
+          "fill-color": "#DC143C", //面颜色
+          "fill-opacity": 0.5 // 面透明度
+        }
+      });
+    }
+
+    // 高亮
+    function clickHighlight(map) {
+      // 数据
+      const data = {
+        type: "FeatureCollection",
+        features: [
+          {
+            type: "Feature",
+            properties: {
+              name: "1",
+              type: 1
+            },
+            geometry: {
+              type: "Polygon",
+              coordinates: [
+                [
+                  [116.38585567474364, 39.92099342895789],
+                  [116.38615608215332, 39.91622086779371],
+                  [116.39057636260985, 39.91655002062137],
+                  [116.39049053192137, 39.921125081103234],
+                  [116.38585567474364, 39.92099342895789],
+                ],
+              ],
+            },
+          },
+          {
+            type: "Feature",
+            properties: {
+              name: "2",
+              type: 1
+            },
+            geometry: {
+              type: "Polygon",
+              coordinates: [
+                [
+                  [116.39104843139647, 39.92102634201797],
+                  [116.39117717742919, 39.91655002062137],
+                  [116.39503955841063, 39.91684625681369],
+                  [116.39469623565674, 39.920960515882015],
+                  [116.39104843139647, 39.92102634201797],
+                ],
+              ],
+            },
+          },
+          {
+            type: "Feature",
+            properties: {
+              name: "3",
+              type: 0
+            },
+            geometry: {
+              type: "Polygon",
+              coordinates: [
+                [
+                  [116.38628482818604, 39.91576005117727],
+                  [116.38662815093993, 39.91227091046905],
+                  [116.39044761657713, 39.91243549657234],
+                  [116.39049053192137, 39.91618795242394],
+                  [116.38628482818604, 39.91576005117727],
+                ],
+              ],
+            },
+          },
+          {
+            type: "Feature",
+            properties: {
+              name: "4",
+              type: 1
+            },
+            geometry: {
+              type: "Polygon",
+              coordinates: [
+                [
+                  [116.39139175415039, 39.91612212163695],
+                  [116.39147758483887, 39.91240257938332],
+                  [116.39516830444335, 39.91266591645252],
+                  [116.39486789703369, 39.91628669848582],
+                  [116.39139175415039, 39.91612212163695],
+                ],
+              ],
+            },
+          },
+        ],
+      };
+      map.addSource("polygon", {
+        type: "geojson",
+        data: data,
+      });
+
+      // 添加图层
+      map.addLayer({
+        id: "Polygon",
+        type: "fill",
+        source: "polygon",
+        paint: {
+          "fill-color": "rgb(0,255,255)",
+        },
+        layout: {},
+      });
+      // 添加高亮图层
+      map.addLayer({
+        id: "highlightPolygon",
+        type: "fill",
+        source: "polygon",
+        paint: {
+          "fill-color": "#6e599f",
+          "fill-opacity": 0.75,
+        },
+        // filter: ["==", ['to-number',['get','name']], 2],
+        // ['in','name','1','3'],
+        filter: [
+          'all',
+          ["==", 'name', '2'],
+          ['==', 'type', 1]
+        ],
+      });
+      // 添加点击事件
+      map.on("click", function (e) {
+        var bbox = [
+          [e.point.x, e.point.y],
+          [e.point.x, e.point.y],
+        ];
+        // 单击地图，从图层Polygon中查询要素
+        var features = map.queryRenderedFeatures(bbox, {
+          layers: ["Polygon"],
+        });
+        var filter = features[0].properties.name;
+        map.setFilter("highlightPolygon", ["in", "name", filter]);
+      });
+    }
+
+    // 颜色区分
+    function uniqueValue(map) {
+      // 数据
+      const data = {
+        type: "FeatureCollection",
+        features: [
+          {
+            type: "Feature",
+            properties: {
+              name: "1",
+            },
+            geometry: {
+              type: "Polygon",
+              coordinates: [
+                [
+                  [116.38585567474364, 39.92099342895789],
+                  [116.38615608215332, 39.91622086779371],
+                  [116.39057636260985, 39.91655002062137],
+                  [116.39049053192137, 39.921125081103234],
+                  [116.38585567474364, 39.92099342895789],
+                ],
+              ],
+            },
+          },
+          {
+            type: "Feature",
+            properties: {
+              name: "2",
+            },
+            geometry: {
+              type: "Polygon",
+              coordinates: [
+                [
+                  [116.39104843139647, 39.92102634201797],
+                  [116.39117717742919, 39.91655002062137],
+                  [116.39503955841063, 39.91684625681369],
+                  [116.39469623565674, 39.920960515882015],
+                  [116.39104843139647, 39.92102634201797],
+                ],
+              ],
+            },
+          },
+          {
+            type: "Feature",
+            properties: {
+              name: "3",
+            },
+            geometry: {
+              type: "Polygon",
+              coordinates: [
+                [
+                  [116.38628482818604, 39.91576005117727],
+                  [116.38662815093993, 39.91227091046905],
+                  [116.39044761657713, 39.91243549657234],
+                  [116.39049053192137, 39.91618795242394],
+                  [116.38628482818604, 39.91576005117727],
+                ],
+              ],
+            },
+          },
+          {
+            type: "Feature",
+            properties: {
+              name: "4",
+            },
+            geometry: {
+              type: "Polygon",
+              coordinates: [
+                [
+                  [116.39139175415039, 39.91612212163695],
+                  [116.39147758483887, 39.91240257938332],
+                  [116.39516830444335, 39.91266591645252],
+                  [116.39486789703369, 39.91628669848582],
+                  [116.39139175415039, 39.91612212163695],
+                ],
+              ],
+            },
+          },
+        ],
+      };
+      map.addSource("polygon", {
+        type: "geojson",
+        data: data,
+      });
+      // 添加图层
+      map.addLayer({
+        id: "uniquePolygon",
+        type: "fill",
+        source: "polygon",
+        paint: {
+          "fill-color": [
+            "match",
+            // 通过字段name进行唯一值渲染
+            // 属性值为1的颜色为rgb(255,0,0),红色
+            ["get", "name"],
+            "1",
+            "rgb(255,0,0)",
+            "2",
+            "rgb(255,255,0)",
+            "3",
+            "rgb(0,255,0)",
+            // 没有被指定颜色的属性值，默认为该颜色
+            "rgb(0,255,255)",
+          ],
+        },
+        layout: {},
+      });
+    }
+
+    // 颜色判断区分
+    function multiLevel(map) {
+      // 数据
+      const data = {
+        type: "FeatureCollection",
+        features: [
+          {
+            type: "Feature",
+            properties: {
+              id: 1,
+            },
+            geometry: {
+              type: "Polygon",
+              coordinates: [
+                [
+                  [116.38585567474364, 39.92099342895789],
+                  [116.38615608215332, 39.91622086779371],
+                  [116.39057636260985, 39.91655002062137],
+                  [116.39049053192137, 39.921125081103234],
+                  [116.38585567474364, 39.92099342895789],
+                ],
+              ],
+            },
+          },
+          {
+            type: "Feature",
+            properties: {
+              id: 2,
+            },
+            geometry: {
+              type: "Polygon",
+              coordinates: [
+                [
+                  [116.39104843139647, 39.92102634201797],
+                  [116.39117717742919, 39.91655002062137],
+                  [116.39503955841063, 39.91684625681369],
+                  [116.39469623565674, 39.920960515882015],
+                  [116.39104843139647, 39.92102634201797],
+                ],
+              ],
+            },
+          },
+          {
+            type: "Feature",
+            properties: {
+              id: 3,
+            },
+            geometry: {
+              type: "Polygon",
+              coordinates: [
+                [
+                  [116.38628482818604, 39.91576005117727],
+                  [116.38662815093993, 39.91227091046905],
+                  [116.39044761657713, 39.91243549657234],
+                  [116.39049053192137, 39.91618795242394],
+                  [116.38628482818604, 39.91576005117727],
+                ],
+              ],
+            },
+          },
+          {
+            type: "Feature",
+            properties: {
+              id: 4,
+            },
+            geometry: {
+              type: "Polygon",
+              coordinates: [
+                [
+                  [116.39139175415039, 39.91612212163695],
+                  [116.39147758483887, 39.91240257938332],
+                  [116.39516830444335, 39.91266591645252],
+                  [116.39486789703369, 39.91628669848582],
+                  [116.39139175415039, 39.91612212163695],
+                ],
+              ],
+            },
+          },
+        ],
+      };
+      // 添加数据源
+      map.addSource("polygon", {
+        type: "geojson",
+        data: data,
+      });
+      // 添加图层
+      map.addLayer({
+        id: "uniquePolygon",
+        type: "fill",
+        source: "polygon",
+        paint: {
+          "fill-color": [
+            "case",
+            // 通过字段id进行唯一值渲染
+            // 属性值 <=2 的颜色为rgb(255,0,0),红色
+            ["<=", ["get", "id"], 2],
+            "rgb(255,0,0)",
+            // 属性值 >2 && <=3 的颜色为rgb(255,255,0),黄色
+            ["<=", ["get", "id"], 3],
+            "rgb(255,255,0)",
+            // 没有被指定颜色的属性值，默认为该颜色
+            "rgb(0,255,255)",
+          ],
+        },
+        layout: {},
+      });
+    }
+
+
+
+
+    // 体
+    function addFillExtrusion(map) {
+      // geojson格式数据
+      // 面
+      const data = {
+        type: "FeatureCollection",
+        features: [
+          {
+            type: "Feature",
+            properties: {
+              id: 1,
+              height: 20,
+            },
+            geometry: {
+              type: "Polygon",
+              coordinates: [
+                [
+                  [116.38585567474364, 39.92099342895789],
+                  [116.38615608215332, 39.91622086779371],
+                  [116.39057636260985, 39.91655002062137],
+                  [116.39049053192137, 39.921125081103234],
+                  [116.38585567474364, 39.92099342895789],
+                ],
+              ],
+            },
+          },
+          {
+            type: "Feature",
+            properties: {
+              id: 2,
+              height: 50,
+            },
+            geometry: {
+              type: "Polygon",
+              coordinates: [
+                [
+                  [116.39104843139647, 39.92102634201797],
+                  [116.39117717742919, 39.91655002062137],
+                  [116.39503955841063, 39.91684625681369],
+                  [116.39469623565674, 39.920960515882015],
+                  [116.39104843139647, 39.92102634201797],
+                ],
+              ],
+            },
+          },
+          {
+            type: "Feature",
+            properties: {
+              id: 3,
+              height: 80,
+            },
+            geometry: {
+              type: "Polygon",
+              coordinates: [
+                [
+                  [116.38628482818604, 39.91576005117727],
+                  [116.38662815093993, 39.91227091046905],
+                  [116.39044761657713, 39.91243549657234],
+                  [116.39049053192137, 39.91618795242394],
+                  [116.38628482818604, 39.91576005117727],
+                ],
+              ],
+            },
+          },
+          {
+            type: "Feature",
+            properties: {
+              id: 4,
+              height: 110,
+            },
+            geometry: {
+              type: "Polygon",
+              coordinates: [
+                [
+                  [116.39139175415039, 39.91612212163695],
+                  [116.39147758483887, 39.91240257938332],
+                  [116.39516830444335, 39.91266591645252],
+                  [116.39486789703369, 39.91628669848582],
+                  [116.39139175415039, 39.91612212163695],
+                ],
+              ],
+            },
+          },
+        ],
+      };
+      // 添加数据源
+
+      const polygonData = {
+        type: "FeatureCollection",
+        features: [
+          {
+            type: "Feature",
+            properties: {},
+            geometry: {
+              type: "Polygon",
+              coordinates: [
+                [
+                  [116.38752937316895, 39.907859855577165],
+                  [116.39570474624634, 39.907859855577165],
+                  [116.39570474624634, 39.91083076519556],
+                  [116.38752937316895, 39.91083076519556],
+                  [116.38752937316895, 39.907859855577165],
+                ],
+              ],
+            },
+          },
+        ],
+      };
+      // 添加数据源
+      map.addSource("polygon", {
+        type: "geojson",
+        data: data,
+      });
+      // 添加图层
+      map.addLayer({
+        id: "polygon",
+        type: "fill-extrusion",
+        source: "polygon",
+        layout: {},
+        paint: {
+          'fill-extrusion-color': [
+            'interpolate',
+            ['linear'],
+            ['get', 'height'],
+            20, 'rgba(255,255,191, 0.65)',
+            60, 'rgba(253,174,97, 0.65)',
+            100, "rgba(215,25,28, 0.65)"
+          ], // 体块颜色
+          "fill-extrusion-height": ["get", "height"],
+          // "fill-extrusion-height": ["to-number", ["get", "height"]],
+          // "fill-extrusion-height": [
+          //   "interpolate",
+          //   ["linear"],
+          //   ["zoom"],
+          //   0, 0,
+          //   12, ["to-number", ["get", "height"]] // 使用 "height" 属性的值
+          // ], // 体块高度
+          "fill-extrusion-base": 0, // 体块基础高度
+          // "fill-extrusion-opacity": 1, // 透明度
+          "fill-extrusion-opacity": [
+            "interpolate",
+            ["exponential", 1.5],  //不同的缩放级别上 “fill-opacity” 的变化将会呈现出指数曲线的形式
+            ["zoom"],
+            2, 0.3,  //在缩放级别为 2 时，设置 “fill-opacity” 为 0.3，表示填充色的透明度为 0.3
+            21, 0.8 //在缩放级别为 7 时，设置 “fill-opacity” 为 0，表示填充色的透明度为 0.8，即完全透明
+          ]
+        },
+      });
+      // 缩放至
+      map.flyTo({ pitch: 70, bearing: 30 });
+    }
+
+    // 圆
+    function addCircle(map) {
+      const pointData = {
+        type: "FeatureCollection",
+        features: [
+          {
+            type: "Feature",
+            properties: {},
+            geometry: {
+              type: "Point",
+              coordinates: [116.39104843139647, 39.912287369097186],
+            },
+          },
+        ],
+      };
+      // 添加数据源
+      map.addSource("point", {
+        type: "geojson",
+        data: pointData,
+      });
+      // 添加圆图层
+      map.addLayer({
+        id: "point",
+        type: "circle",
+        source: "point",
+        paint: {
+          "circle-radius": 150, //圆半径
+          "circle-color": "purple", //圆颜色,
+          "circle-opacity": 0.5
+        },
+      });
+    }
+
+
+    // 天空盒
+    function addSky(map) {
+      map.addLayer({
+        id: "sky",
+        type: "sky",
+        paint: {
+          // 渐进天空
+          "sky-type": "gradient",
+          // 设置天空渐变效果
+          "sky-gradient": [
+            "interpolate",
+            ["linear"], //线性
+            ["sky-radial-progress"], //根据指定的属性值（“sky-radial-progress”）来计算天空的颜色渐变
+            0.8,  //当 “sky-radial-progress” 属性值为0.8时，天空的颜色为 “rgba(135, 206, 235, 1.0)”
+            "rgba(135, 206, 235, 1.0)",  //表示一个蓝天的颜色
+            1, //当 “sky-radial-progress” 属性值为1时，天空的颜色为 “rgba(0,0,0,0.1)”，表示一个较暗的天空色
+            "rgba(0,0,0,0.1)",
+          ],
+          // 设置天空渐变的中心点。接受一个包含 [x, y] 坐标值的数组，表示中心点的位置，默认为 [0.5, 0.5]。
+          "sky-gradient-center": [0.6, 0.6],
+          // 设置天空渐变的半径。接受一个数字来定义渐变的半径大小，默认值为 1.0
+          "sky-gradient-radius": 90,
+          // 设置天空的透明度
+          "sky-opacity": [
+            "interpolate", //插入
+            ["exponential", 0.1], //在小于和刚好大于输入的停止点之间以指数方式插值
+            ["zoom"],
+            5,
+            0,
+            22,
+            1,
+          ],
+        },
+      });
+      map.flyTo({
+        pitch: 90,
+      });
+    }
+
+
+    // 点
+    function addMarker(map) {
+      new mapboxgl.Marker()
+        .setLngLat([116.39104843139647, 39.912287369097186])
+        .addTo(map);
+    }
+
+    // 雾
+    function addFog(map) {
+      map.addLayer({
+        id: "sky",
+        type: "sky",
+        paint: {
+          // 渐进天空
+          "sky-type": "gradient",
+          // 中间白，向外逐渐扩散
+          // 模拟了地平线以下太阳的外观
+          "sky-gradient": [
+            "interpolate",
+            ["linear"],
+            ["sky-radial-progress"],
+            0.8,
+            "rgba(135, 206, 235, 1.0)",
+            1,
+            "rgba(0,0,0,0.1)",
+          ],
+          "sky-gradient-center": [0, 0],
+          "sky-gradient-radius": 90,
+          "sky-opacity": [
+            "interpolate",
+            ["exponential", 0.1],
+            ["zoom"],
+            5,
+            0,
+            22,
+            1,
+          ],
+        },
+      });
+      map.flyTo({
+        pitch: 80,
+      });
+      map.setFog({
+        range: [4.0, 8.0],
+        color: "white",
+        "horizon-blend": 0.1,
+      });
+    }
+
+    // 地形
+    function addTerrain(map) {
+      // 增加地形源
+      map.addSource("mapbox-dem", {
+        type: "raster-dem",
+        url: "mapbox://mapbox.mapbox-terrain-dem-v1",
+        tileSize: 512,
+        maxzoom: 14,
+      });
+      // 设置地形源，并设置地形夸张系数
+      map.setTerrain({ source: "mapbox-dem", exaggeration: 1.5 });
+
+      // 添加天空
+      map.addLayer({
+        id: "sky",
+        type: "sky",
+        paint: {
+          // gradient：用渐变渲染天空
+          // atmosphere：渲染天空用模拟大气散射算法，太阳的方向可以附加到光的位置或明确设置通过。
+          "sky-type": "atmosphere",
+          // 天空-大气-太阳，[方位角，p极角]，
+          // 方位角表示太阳相对于北纬 0° 的位置，其中度数顺时针方向。
+          // 极角表示太阳的高度，其中 0° 在天顶的正上方，90° 在地平线
+          "sky-atmosphere-sun": [0.0, 0.0],
+          // 天空-大气-太阳强度
+          // 太阳作为大气中光源的强度（从0到100）。设置更高的值将使天空变亮
+          "sky-atmosphere-sun-intensity": 15,
+        },
+      });
+      map.flyTo({
+        center: [-114.34411, 32.6141],
+        zoom: 13,
+        pitch: 80,
+      });
+    }
+
+    function addWMTS(map) {
+      map.addSource("天地图影像", {
+        tileSize: 256,
+        tiles: [
+          "http://t0.tianditu.gov.cn/DataServer?T=img_w&x={x}&y={y}&l={z}&tk=b8b36f528ccc550525c7cada64303bc4",
+          "http://t1.tianditu.gov.cn/DataServer?T=img_w&x={x}&y={y}&l={z}&tk=b8b36f528ccc550525c7cada64303bc4",
+          "http://t2.tianditu.gov.cn/DataServer?T=img_w&x={x}&y={y}&l={z}&tk=b8b36f528ccc550525c7cada64303bc4",
+          "http://t3.tianditu.gov.cn/DataServer?T=img_w&x={x}&y={y}&l={z}&tk=b8b36f528ccc550525c7cada64303bc4",
+          "http://t4.tianditu.gov.cn/DataServer?T=img_w&x={x}&y={y}&l={z}&tk=b8b36f528ccc550525c7cada64303bc4",
+          "http://t5.tianditu.gov.cn/DataServer?T=img_w&x={x}&y={y}&l={z}&tk=b8b36f528ccc550525c7cada64303bc4",
+          "http://t6.tianditu.gov.cn/DataServer?T=img_w&x={x}&y={y}&l={z}&tk=b8b36f528ccc550525c7cada64303bc4",
+          "http://t7.tianditu.gov.cn/DataServer?T=img_w&x={x}&y={y}&l={z}&tk=b8b36f528ccc550525c7cada64303bc4",
+        ],
+        type: "raster",
+      });
+      map.addLayer({
+        id: "tdt",
+        source: "天地图影像",
+        type: "raster",
+        minzoom: 0,
+      });
+    }
+
+    function addHeatMap(map) {
+      // 本示例为官方示例改动而成
+      map.addSource("earthquakes", {
+        type: "geojson",
+        // 数据为mapbox官方数据
+        // 可能访问不到或者跨域，本地测试时可以直接下下来
+        data: "https://docs.mapbox.com/mapbox-gl-js/assets/earthquakes.geojson",
+      });
+
+      map.addLayer(
+        {
+          id: "earthquakes-heat",
+          type: "heatmap",
+          source: "earthquakes",
+          maxzoom: 9,
+          paint: {
+            // 根据频率和属性大小增加热力图权重
+            "heatmap-weight": [
+              "interpolate",
+              ["linear"],
+              ["get", "mag"],
+              0,
+              0,
+              6,
+              1,
+            ],
+            // 热力图的强度
+            // 根据缩放级别增加热力图权重
+            // heatmap-intensity 是热力图权重的乘数
+            "heatmap-intensity": ["interpolate", ["linear"], ["zoom"], 0, 1, 9, 3],
+            // 色带
+            "heatmap-color": [
+              "interpolate",
+              ["linear"],
+              ["heatmap-density"],
+              0,
+              "rgba(33,102,172,0)",
+              0.2,
+              "rgb(103,169,207)",
+              0.4,
+              "rgb(209,229,240)",
+              0.6,
+              "rgb(253,219,199)",
+              0.8,
+              "rgb(239,138,98)",
+              1,
+              "rgb(178,24,43)",
+            ],
+            // 根据缩放级别调整热力图半径
+            "heatmap-radius": ["interpolate", ["linear"], ["zoom"], 0, 2, 9, 20],
+            // 透明度
+            "heatmap-opacity": ["interpolate", ["linear"], ["zoom"], 7, 1, 9, 0],
+          },
+        },
+        // "waterway-label"
+      );
+      // 添加圆图层，叠加效果更好
+      map.addLayer(
+        {
+          id: "earthquakes-point",
+          type: "circle",
+          source: "earthquakes",
+          minzoom: 7,
+          paint: {
+            "circle-radius": [
+              "interpolate",
+              ["linear"],
+              ["zoom"],
+              7,
+              ["interpolate", ["linear"], ["get", "mag"], 1, 1, 6, 4],
+              16,
+              ["interpolate", ["linear"], ["get", "mag"], 1, 5, 6, 50],
+            ],
+            "circle-color": [
+              "interpolate",
+              ["linear"],
+              ["get", "mag"],
+              1,
+              "rgba(33,102,172,0)",
+              2,
+              "rgb(103,169,207)",
+              3,
+              "rgb(209,229,240)",
+              4,
+              "rgb(253,219,199)",
+              5,
+              "rgb(239,138,98)",
+              6,
+              "rgb(178,24,43)",
+            ],
+            "circle-stroke-color": "white",
+            "circle-stroke-width": 1,
+            "circle-opacity": ["interpolate", ["linear"], ["zoom"], 7, 0, 8, 1],
+          },
+        },
+        "waterway-label"
+      );
+      map.flyTo({
+        center: [-120, 50],
+        zoom: 2,
+      });
+    }
+
+
+    map.on('load', () => {
+      // addBase(map);
+      // addHeatMap(map);
+      // multiLevel(map);
+      // uniqueValue(map);
+      // clickHighlight(map);
+      // addFillExtrusion(map);
+      addCircle(map);
+      // addSky(map);
+      // addMarker(map);
+      // addFog(map);
+      // addTerrain(map);
+      // addWMTS(map);
+
+
+      // map.setLayoutProperty('point', 'visibility', 'none');
+      // clickHighlight(map);
+
+
+      // 获取
+      // const bearing = map.getBearing();
+      // // 设置朝向为90度，这么设置没有动画
+      // map.setBearing(90);
+      // // 旋转到90度, 期间有两秒的过渡动画，方法第二个参数duration为过渡时间，单位为毫秒
+      // map.rotateTo(90, { duration: 2000 });
+      // // 旋转到正北方向，也就是0度，同样是有两秒的过渡时间
+      // map.resetNorth({ duration: 2000 });
+
+
+      // const pitch = map.getPitch();
+      // map.setPitch(10)
+
+
+      // const zoom = map.getZoom();
+      // // 设置层级
+      // map.setZoom(5);
+      // // 缩放到该级别，并有一个过渡动画
+      // map.zoomTo(8, {
+      //   duration: 2000,
+      // });
+
+
+      // map.jumpTo({
+      //   center: [0, 0],
+      //   zoom: 8,
+      //   pitch: 45,
+      //   bearing: 90
+      // });
+
+
+      // 加载图片
+      // map.loadImage('https://upload.wikimedia.org/wikipedia/commons/thumb/6/60/Cat_silhouette.svg/400px-Cat_silhouette.svg.png', (error, image) => {
+      //   // 回调中获取图片资源
+      //   if (error) throw error;
+      //   // 判断地图资源中，是否有叫 cat 的图片
+      //   // 如果没有，那么则将此图片加到地图资源中，并命名为cat
+      //   if (!map.hasImage('cat')) map.addImage('cat', image);
+      // });
+
+
+    });
+
+
+
+
+  </script>
+</body>
+
+</html>

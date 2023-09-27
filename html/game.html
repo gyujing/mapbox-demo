@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <title>Add custom icons with Markers</title>
+    <meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no">
+    <link href="https://api.mapbox.com/mapbox-gl-js/v2.14.1/mapbox-gl.css" rel="stylesheet">
+    <script src="https://api.mapbox.com/mapbox-gl-js/v2.14.1/mapbox-gl.js"></script>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+        }
+
+        #map {
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            width: 100%;
+        }
+
+    </style>
+</head>
+
+<body>
+    <style>
+        .marker {
+            display: block;
+            border: none;
+            border-radius: 50%;
+            cursor: pointer;
+            padding: 0;
+        }
+
+    </style>
+
+    <div id="map"></div>
+
+    <script>
+        mapboxgl.accessToken = 'pk.eyJ1IjoieXVqaW5nZ3UiLCJhIjoiY2tucG45emtzMDJvMjJwbW1iZjB6bnhleSJ9.S4mxBxrZL0KFEiitoBUp0Q';
+
+        const map = new mapboxgl.Map({
+            container: 'map',
+            style: 'mapbox://styles/mapbox/streets-v12',
+            center: [116.39104843139647, 39.912287369097186],
+            zoom: 17,
+            pitch: 60,
+            bearing: -12,
+            // interactive: false //不允许鼠标进行交互操作
+        });
+
+        function easing(t) {
+            return t * (2 - t);
+        }
+
+        map.on('load', () => {
+
+            map.getCanvas().focus();
+            map.getCanvas().addEventListener(
+                'keydown',
+                (e) => {
+                    e.preventDefault();
+                    if (e.which === 38) {
+                        // up
+                        map.panTo([0, -100], {
+                            easing: easing  //移动速度
+                        });
+                    } else if (e.which === 40) {
+                        // down
+                        map.panBy([0, 100], {
+                            easing: easing
+                        });
+                    } else if (e.which === 37) {
+                        // left
+                        map.easeTo({
+                            bearing: map.getBearing() - 25,
+                            easing: easing
+                        });
+                    } else if (e.which === 39) {
+                        // right
+                        map.easeTo({
+                            bearing: map.getBearing() + 25,
+                            easing: easing
+                        });
+                    }
+                },
+                true
+            );
+
+        })
+
+
+        // map.on("click", () => {
+        //     map.easeTo({
+        //         center: [116.39104843139647, 39.912287369097186],
+        //         bearing: 70,
+        //         zoom: 9,
+        //         speed: 0.2,
+        //         curve: 1,
+        //         duration: 5000,
+        //         easing(t) {
+        //             return t;
+        //         }
+        //     });
+        // })
+    </script>
+
+</body>
+
+</html>

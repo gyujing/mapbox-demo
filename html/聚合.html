@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="utf-8">
+  <title>Create and style clusters</title>
+  <meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no">
+  <link href="https://api.mapbox.com/mapbox-gl-js/v2.14.1/mapbox-gl.css" rel="stylesheet">
+  <script src="https://api.mapbox.com/mapbox-gl-js/v2.14.1/mapbox-gl.js"></script>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+    }
+
+    #map {
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      width: 100%;
+    }
+
+    .title {
+      font-size: 18px;
+      color: blue;
+    }
+
+  </style>
+</head>
+
+<body>
+  <div id="map"></div>
+
+  <script>
+    mapboxgl.accessToken = 'pk.eyJ1IjoieXVqaW5nZ3UiLCJhIjoiY2tucG45emtzMDJvMjJwbW1iZjB6bnhleSJ9.S4mxBxrZL0KFEiitoBUp0Q';
+    const map = new mapboxgl.Map({
+      container: 'map',
+      style: 'mapbox://styles/mapbox/dark-v11',
+      center: [-103.5917, 40.6699],
+      zoom: 3
+    });
+
+    map.on('load', () => {
+
+      // point_count 和 point_count_abbreviated 属性值是根据聚合群组中的要素数量计算得出的，并不是数据源中直接提供的
+      map.addSource('earthquakes', {
+        type: 'geojson',
+        data: 'https://docs.mapbox.com/mapbox-gl-js/assets/earthquakes.geojson',
+        cluster: true,
+        clusterMaxZoom: 14, // 最大缩放到集群点上
+        clusterRadius: 50 // 聚类点时每个簇的半径(默认为50)
+      });
+
+      //  point_count：聚合图层中的一个特殊属性，它用于跟踪给定聚合单元格内的要素数量
+      map.addLayer({
+        id: 'clusters',
+        type: 'circle',
+        source: 'earthquakes',
+        filter: ['has', 'point_count'],//只显示具有聚合点的要素，而忽略没有聚合点的要素
+        paint: {
+          // *当point_count小于100时，蓝色，20px圆圈
+          // *当point_count在100到750之间时，黄色，30px的圆圈
+          // *当point_count大于或等于750时，粉红色，40px的圆圈
+          'circle-color': [
+            'step',
+            ['get', 'point_count'],
+            '#51bbd6',
+            100,
+            '#f1f075',
+            750,
+            '#f28cb1'
+          ],
+          // *当point_count小于20时，20px圆圈
+          // *当point_count在100到750之间时，30px的圆圈
+          // *当point_count大于或等于750时，40px的圆圈
+          'circle-radius': [
+            'step',
+            ['get', 'point_count'],
+            20,
+            100,
+            30,
+            750,
+            40
+          ]
+        }
+      });
+
+      // 聚合圈上数字显示
+      map.addLayer({
+        id: 'cluster-count',
+        type: 'symbol',
+        source: 'earthquakes',
+        filter: ['has', 'point_count'],
+        layout: {
+          // 从数据源中获取 ‘point_count_abbreviated’ 字段的值
+          'text-field': ['get', 'point_count_abbreviated'], // 文本显示的字段为聚合点的数量
+          'text-font': ['DIN Offc Pro Medium', 'Arial Unicode MS Bold'],//文本的字体样式
+          'text-size': 12
+        }
+      });
+
+      // 没有聚合,所有原来的点
+      map.addLayer({
+        id: 'unclustered-point',
+        type: 'circle',
+        source: 'earthquakes',
+        // filter: ['!', ['has', 'point_count']], //ok
+        filter: ['!has', 'point_count'], //ok
+        paint: {
+          'circle-color': '#FFA500',// 没有聚合的点的颜色
+          'circle-radius': 4,
+          'circle-stroke-width': 1,
+          'circle-stroke-color': '#fff'
+        }
+      });
+
+      // 点击聚合
+      map.on('click', 'clusters', (e) => {
+        const features = map.queryRenderedFeatures(e.point, {
+          layers: ['clusters']
+        });
+        // 获取展开缩放级别的聚合群组的标识符
+        const clusterId = features[0].properties.cluster_id;
+        // 获取聚合群组的展开缩放级别（cluster expansion zoom），
+        // 并根据返回的缩放级别进行地图动画切换到该聚合群组
+        // map.getSource('earthquakes')：获取名为 ‘earthquakes’ 的数据源（source）对象
+        // getClusterExpansionZoom(clusterId, callback) 获取指定聚合群组的展开缩放级别
+        map.getSource('earthquakes').getClusterExpansionZoom(
+          clusterId,
+          (err, zoom) => {
+            if (err) return;
+            // 切换地图视图
+            map.easeTo({
+              // 指定地图视图的中心点坐标为聚合群组内的第一个要素
+              center: features[0].geometry.coordinates,
+              // 指定地图视图的缩放级别为获取到的展开缩放级别。
+              zoom: zoom
+            });
+          }
+        );
+      });
+
+      // 点击未聚合的点,显示弹窗
+      map.on('click', 'unclustered-point', (e) => {
+        const coordinates = e.features[0].geometry.coordinates.slice();
+        const mag = e.features[0].properties.mag;
+        const tsunami =
+          e.features[0].properties.tsunami === 1 ? 'yes' : 'no';
+
+        //确保如果地图被放大，这样的倍数
+        //功能的副本是可见的，弹出窗口出现
+        //指针指向的副本。
+        while (Math.abs(e.lngLat.lng - coordinates[0]) > 180) {
+          coordinates[0] += e.lngLat.lng > coordinates[0] ? 360 : -360;
+        }
+
+        new mapboxgl.Popup()
+          .setLngLat(coordinates)
+          .setHTML(
+            `<div class="title">magnitude:</div> ${mag}<br>Was there a tsunami?: ${tsunami}`
+          )
+          .addTo(map);
+      });
+
+      map.on('mouseenter', 'clusters', () => {
+        map.getCanvas().style.cursor = 'pointer';
+      });
+      map.on('mouseleave', 'clusters', () => {
+        map.getCanvas().style.cursor = '';
+      });
+    });
+  </script>
+
+</body>
+
+</html>

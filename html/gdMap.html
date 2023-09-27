@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>高德地图</title>
+  <link href="https://api.mapbox.com/mapbox-gl-js/v2.14.1/mapbox-gl.css" rel="stylesheet">
+  <script src="https://api.mapbox.com/mapbox-gl-js/v2.14.1/mapbox-gl.js"></script>
+</head>
+<style>
+  body {
+    margin: 0;
+    padding: 0;
+  }
+
+  #map {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 100%;
+  }
+
+</style>
+
+<body>
+  <div id="map"></div>
+  <script>
+
+    const gaode = {
+      "version": 8,
+      "sources": {
+        "raster-tiles": {
+          "type": "raster",
+          "tiles": ["http://webrd01.is.autonavi.com/appmaptile?lang=zh_cn&size=1&scale=1&style=8&x={x}&y={y}&z={z}"],
+          "tileSize": 256
+        }
+      },
+      "layers": [{
+        "id": "simple-tiles",
+        "type": "raster",
+        "source": "raster-tiles",
+        "minzoom": 0,
+        "maxzoom": 22
+      }]
+    };
+
+    mapboxgl.accessToken = 'pk.eyJ1IjoieXVqaW5nZ3UiLCJhIjoiY2tucG45emtzMDJvMjJwbW1iZjB6bnhleSJ9.S4mxBxrZL0KFEiitoBUp0Q';
+    const map = new mapboxgl.Map({
+      container: 'map',
+      style: gaode,
+      center: [114.30, 30.50],
+      zoom: 3,
+      projection: "globe"
+    });
+
+    map.on("style.load", () => {
+      map.setFog({
+        /* 设置大气层的颜色 */
+        "color": "yellow",
+        /* 大气层之上的颜色 */
+        "high-color": "green",
+        //定制化星空的颜色
+        "space-color": "blue"
+      })
+    })
+
+  </script>
+</body>
+
+</html>

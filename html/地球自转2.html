@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <title>Add custom icons with Markers</title>
+    <meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no">
+    <link href="https://api.mapbox.com/mapbox-gl-js/v2.14.1/mapbox-gl.css" rel="stylesheet">
+    <script src="https://api.mapbox.com/mapbox-gl-js/v2.14.1/mapbox-gl.js"></script>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+        }
+
+        #map {
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            width: 100%;
+        }
+
+    </style>
+</head>
+
+<body>
+ 
+    <div id="map"></div>
+
+    <script>
+        mapboxgl.accessToken = 'pk.eyJ1IjoieXVqaW5nZ3UiLCJhIjoiY2tucG45emtzMDJvMjJwbW1iZjB6bnhleSJ9.S4mxBxrZL0KFEiitoBUp0Q';
+
+        const map = new mapboxgl.Map({
+            container: 'map',
+            style: 'mapbox://styles/mapbox/streets-v12',
+            center: [-65.017, -16.457],
+            zoom: 1.5
+        });
+
+
+        let isToggle = false;
+
+        function rorateMap() {
+            // zoom 超过 4 ，不自传
+            // 加 isToggle 判断是为了防止 moveend触发
+            let zoom = map.getZoom();
+            if (!isToggle && zoom < 4) {
+                let center = map.getCenter();
+                center.lng += 10;
+                map.easeTo({
+                    center,
+                    duration: 3000,
+                    easing(t) {
+                        return t;
+                    }
+
+                })
+            }
+        }
+
+        // 在地图完成从一个视图到另一个视图的转换后触发
+        map.on("moveend", () => {
+            console.log("moveend")
+            rorateMap();
+        })
+
+        rorateMap();
+
+
+        map.on("click", () => {
+            isToggle = !isToggle;
+            if (!isToggle) {
+                console.log("转动")
+                rorateMap();
+            } else {
+                console.log("停止")
+                map.stop();
+            }
+
+        })
+
+
+    </script>
+
+</body>
+
+</html>

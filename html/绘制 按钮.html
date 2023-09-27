@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <title>Draw a polygon and calculate its area</title>
+    <meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no">
+    <link href="https://api.mapbox.com/mapbox-gl-js/v2.14.1/mapbox-gl.css" rel="stylesheet">
+    <script src="https://api.mapbox.com/mapbox-gl-js/v2.14.1/mapbox-gl.js"></script>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+        }
+
+        #map {
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            width: 100%;
+        }
+
+    </style>
+</head>
+
+<body>
+    <style>
+        .calculation-box {
+            height: 75px;
+            width: 150px;
+            position: absolute;
+            bottom: 40px;
+            left: 10px;
+            background-color: rgba(255, 255, 255, 0.9);
+            padding: 15px;
+            text-align: center;
+        }
+
+        p {
+            font-family: 'Open Sans';
+            margin: 0;
+            font-size: 13px;
+        }
+
+    </style>
+
+    <script src="https://unpkg.com/@turf/turf@6/turf.min.js"></script>
+    <script src="https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-draw/v1.4.0/mapbox-gl-draw.js"></script>
+    <link rel="stylesheet" href="https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-draw/v1.4.0/mapbox-gl-draw.css"
+        type="text/css">
+    <div id="map"></div>
+    <div class="calculation-box">
+        <button onclick="drawPolygon()">绘制多边形</button>
+        <button onclick="drawPoint()">绘制点</button>
+        <button onclick="drawLine()">绘制线条</button>
+        <button onclick="drawCircle()">绘制圆</button>
+    </div>
+
+    <script>
+        let circle = false;
+        mapboxgl.accessToken = 'pk.eyJ1IjoieXVqaW5nZ3UiLCJhIjoiY2tucG45emtzMDJvMjJwbW1iZjB6bnhleSJ9.S4mxBxrZL0KFEiitoBUp0Q';
+        const map = new mapboxgl.Map({
+            container: 'map',
+            style: 'mapbox://styles/mapbox/streets-v12', // style URL
+            center: [-91.874, 42.76],
+            zoom: 12
+        });
+
+        const draw = new MapboxDraw({
+            displayControlsDefault: true,
+        });
+
+        map.addControl(draw, "top-right");
+
+        map.on('draw.create', updateArea);
+        map.on('draw.delete', updateArea);
+        map.on('draw.update', updateArea);
+
+        function updateArea(e) {
+            const data = draw.getAll();
+
+            if (data.features.length > 0) {
+                console.log(data)
+                if (circle) {
+                    addCircle(data);
+                }
+            } else {
+                if (e.type !== 'draw.delete')
+                    alert('Click the map to draw a polygon.');
+            }
+        }
+
+        // 需要中心点和半径
+        function addCircle(data){
+            // 添加数据源
+            map.addSource("circle", {
+                type: "geojson",
+                data: data,
+            });
+            // 添加圆图层
+            map.addLayer({
+                id: "point",
+                type: "circle",
+                source: "circle",
+                paint: {
+                    "circle-radius": 150, //圆半径
+                    "circle-color": "purple", //圆颜色,
+                    "circle-opacity": 0.5
+                },
+            });
+        }
+
+        // 绘制多边形
+        function drawPolygon() {
+            circle = false;
+            draw.changeMode('draw_polygon')
+        }
+
+        function drawPoint() {
+            circle = false;
+            draw.changeMode('draw_point')
+        }
+
+        function drawLine() {
+            circle = false;
+            draw.changeMode('draw_line_string')
+        }
+
+        function drawCircle() {
+            circle = true;
+            draw.changeMode('draw_point')
+        }
+    </script>
+
+</body>
+
+</html>
